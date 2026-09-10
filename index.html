@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="theme-color" content="#080b18">
+  <title>Nightshift — Midnight Run</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="race.css">
+</head>
+<body>
+  <canvas id="world" aria-label="3D highway racing game"></canvas>
+  <div class="vignette"></div>
+  <header><a class="brand" href="./"><span class="brand-icon">Ⅲ</span> NIGHTSHIFT<span class="edition">THE ALPINE SPRINT</span></a><div class="header-actions"><button id="mute" class="text-button" aria-pressed="false">SOUND ON</button><button id="camera" class="text-button">CHASE CAM</button><button id="pause" class="icon-button" aria-label="Pause game">Ⅱ</button></div></header>
+  <main id="menu" class="panel">
+    <div class="eyebrow"><span></span> M5 CS INSPIRED / ALPINE SPRINT</div>
+    <h1>BUILT FOR<br><em>THE CHASE.</em></h1>
+    <p>Four kilometres. Three checkpoints. One shot.<br>Beat the clock through the mountain highway.</p>
+    <button id="start" class="primary">START YOUR ENGINE <span>↗</span></button>
+    <div class="instructions"><span><kbd>←</kbd><kbd>→</kbd> STEER</span><span><kbd>S</kbd> BRAKE</span><span><kbd>SPACE</kbd> BOOST</span></div>
+    <div class="driving-note">AUTO ACCELERATE · W FULL THROTTLE · C CAMERA</div>
+    <div class="record">PERSONAL BEST <strong id="menu-best">0.00 <small>KM</small></strong></div>
+  </main>
+  <aside id="car-info"><span>YOUR MACHINE</span><strong>M5 <em>CS</em></strong><p>DEEP GREEN / GOLD BRONZE</p><div><span><b>V8</b> INSPIRED</span><span><b>300</b> KM/H IN GAME</span></div></aside>
+  <section id="hud" hidden aria-label="Race statistics">
+    <div class="distance"><div class="label">DISTANCE</div><strong id="distance">0.00</strong><span> / 4 KM</span><div class="best-label" id="best">4 KM COURSE</div><div class="condition"><span>CONDITION <b id="health-label">100%</b></span><div><i id="health-fill"></i></div></div></div>
+    <div class="race-stats"><div><span>TIME LEFT</span><strong id="timer">50.0</strong></div><div><span>SCORE</span><strong id="score">0</strong></div><div><span>CHECKPOINTS</span><strong id="checkpoint-count">0 / 3</strong></div></div>
+    <div class="route"><i id="race-progress"></i><b style="left:25%"></b><b style="left:50%"></b><b style="left:75%"></b></div>
+    <div id="countdown" hidden>3</div>
+    <div class="speed"><div><span class="gear" id="gear">1</span><strong id="speed">0</strong><span>KM/H</span></div><div class="speed-track"><i id="speed-fill"></i></div><div class="boost-label"><span>◈ NITRO</span><span id="nitro-label">READY</span></div><div class="boost-track"><i id="boost-fill"></i></div></div>
+    <div id="notice">KEEP IT CLEAN. KEEP IT FAST.</div>
+    <div class="touch"><button id="left" aria-label="Steer left">←</button><button id="right" aria-label="Steer right">→</button><button id="brake" aria-label="Brake">BRAKE</button><button id="boost" aria-label="Use nitro boost">NITRO</button></div>
+  </section>
+  <div id="impact"></div>
+  <section id="overlay" class="overlay" hidden><div class="dialog"><div id="dialog-label" class="eyebrow">TAKE A BREATHER</div><h2 id="dialog-title">PAUSED.</h2><p id="dialog-copy">The highway will be here.</p><button id="resume" class="primary">BACK TO THE ROAD <span>↗</span></button><button id="restart" class="secondary">RESTART RUN</button></div></section>
+  <footer><span><i></i> ALPINE SPRINT</span><span>4 KM <b>/</b> TIME ATTACK</span><span id="sound-hint">P PAUSE · C CAMERA · M SOUND</span></footer>
+  <script src="three.min.js"></script>
+  <script src="scene.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

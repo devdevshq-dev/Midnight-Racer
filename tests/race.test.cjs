@@ -1,0 +1,23 @@
+const {readFileSync}=require('node:fs');
+const {join}=require('node:path');
+const vm=require('node:vm');
+const assert=require('node:assert/strict');
+const elements=new Map(),storage=new Map();
+const element=id=>{if(!elements.has(id))elements.set(id,{style:{},classList:{add(){},remove(){},toggle(){}},setAttribute(){}});return elements.get(id);};
+class MockScene{constructor(){this.renderer={info:{render:{}}};}roadSlope(s){return Math.cos(s*.0028)*.0588+Math.cos(s*.006+.4)*.036;}impact(){}render(){}}
+const context={console,RaceScene:MockScene,document:{getElementById:element,body:{classList:{add(){}}},addEventListener(){}},window:{},localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},addEventListener(){},requestAnimationFrame(){},setTimeout(){}};
+const source=readFileSync(join(__dirname,'../game.js'),'utf8').replace('function frame(t){','globalThis.test={state,start,update,pause,hit,finish,keys};function frame(t){');
+vm.runInNewContext(source,context);const t=context.test;
+const step=seconds=>{for(let i=0;i<Math.ceil(seconds*60);i++)t.update(1/60);};
+t.start();assert.equal(t.state.mode,'countdown');step(3.1);assert.equal(t.state.mode,'playing');
+step(1);assert(t.state.distance>0);t.keys.add('KeyD');step(.2);t.keys.clear();assert(t.state.x>.1);
+t.keys.add('Space');step(.4);assert(t.state.boosting);assert(t.state.nitro<100);t.keys.clear();
+t.pause();const distance=t.state.distance;step(1);assert.equal(t.state.distance,distance);t.pause();assert.equal(t.state.mode,'playing');
+t.state.traffic=[];t.state.x=0;t.state.distance=999.9;t.state.speed=200;const time=t.state.time;t.update(.02);assert.equal(t.state.checkpoint,1);assert(t.state.time>time+24);
+t.hit(40);assert.equal(t.state.health,60);t.hit(40);assert.equal(t.state.health,60,'Collision immunity prevents per-frame damage');
+t.state.traffic=[];t.state.x=0;step(1.7);t.hit(40);assert.equal(t.state.health,20);
+t.state.traffic=[];t.state.x=0;step(1.7);t.hit(40);assert.equal(t.state.mode,'crashed');
+t.start();step(3.1);t.state.distance=3999.9;t.state.speed=200;t.state.x=0;t.update(.02);assert.equal(t.state.mode,'finished');assert(storage.has('nightshift-score'));
+t.start();step(3.1);t.state.time=.001;t.update(.02);assert.equal(t.state.mode,'crashed');
+t.start();assert.equal(t.state.health,100);assert.equal(t.state.distance,0);assert.equal(t.state.checkpoint,0);
+console.log('PASS: countdown, movement, steering, boost, pause, checkpoint time bonus, collision damage and immunity, finish, timeout, persistence, restart.');
