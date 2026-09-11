@@ -1,8 +1,8 @@
-# Nightshift — Alpine Sprint
+# Nightshift — Endless Run
 
-A browser 3D time-attack racer. Open `index.html` in a modern browser to play. No installation or build step is required: Three.js 0.160.1 is bundled locally under its MIT license (`THREE-LICENSE.txt`). Optional Google Fonts fall back to system fonts when offline.
+A browser 3D endless highway racer. Open `index.html` in a modern browser to play. No installation or build step is required: Three.js 0.160.1 and the car asset are bundled locally. Optional Google Fonts fall back to system fonts when offline.
 
-The original procedural sedan is inspired by the supplied BMW M5 CS photograph: deep green paint, bronze kidney surrounds and split-spoke wheels, yellow running lights, four-door body, wheel arches, hood contours, carbon roof and quad exhausts. Three.js provides physical materials, environment reflections, tone mapping and cast shadows. It is a reference-inspired model, not an official BMW asset or an exact photogrammetry recreation. The reference photograph is not redistributed with the game.
+The player car is converted from the user-supplied `22m5/dlc.rpf`, with its detailed body, interior, badges, textures and animated wheels. The previous procedural player car has been removed. Physical materials provide deep green paint, bronze trim, glass reflections and working brake lights; the highway has textured asphalt, shaded terrain and soft shadows. The original GTA shaders are approximated with browser PBR materials, not reproduced pixel-for-pixel. See `assets/MODEL-NOTICE.md` for provenance and usage notes.
 
 Alternatively, serve this folder with `python3 -m http.server 8080` and visit http://localhost:8080.
 
@@ -18,10 +18,18 @@ Alternatively, serve this folder with `python3 -m http.server 8080` and visit ht
 - Enter: start or retry
 - Touchscreen: on-screen steering, brake and nitro buttons
 
-Complete the 4 km course before the timer expires. Each of the three checkpoints adds 25 seconds. Traffic changes lanes; close passes add score, a temporary multiplier and nitro. Traffic collisions remove 40% condition, barriers remove 18%, and collisions briefly grant damage immunity. Running out of time or condition ends the race. Finish with time remaining for a score bonus. Best score is saved locally when storage is available. Leaving the window automatically pauses the game.
+There is no finish line, distance cap, checkpoint requirement or time limit. Distance and drive time keep increasing. Every 15 seconds of active driving, current speed and cruise/throttle/nitro targets increase by 10%, cumulatively: 1.10× after 15 seconds, 1.21× after 30, 1.331× after 45. Braking remains available. The starting countdown, pauses and background tabs do not advance this timer; restarting resets the progression.
+
+Traffic changes lanes; close passes add score, a temporary multiplier and nitro. Traffic collisions remove 40% condition, barriers remove 18%, and collisions briefly grant damage immunity. A run ends only when condition reaches zero. Best score is saved locally when storage is available. Leaving the window automatically pauses the game.
 
 ## Verification
 
-Run `node tests/race.test.cjs` for countdown, driving, checkpoint bonuses, damage/immunity, win/loss, persistence and restart checks. Actual Chrome testing also covers WebGL startup, keyboard steering, boost, pause/resume, both cameras, restart and mobile rendering.
+Run `node tests/race.test.cjs` for driving, endless distance/time, damage/immunity, score persistence, cumulative speed increases, pause and restart checks. Run `node tests/model.test.cjs` to validate the GLB and wheel geometry. Actual Chrome testing also covers WebGL startup, keyboard steering, boost, pause/resume, both cameras, restart and mobile rendering.
 
-`scene.js` owns the model, lighting, road and cameras; `game.js` owns the race simulation, input, audio and HUD. `style.css` and `race.css` style the interface.
+`car-loader.js` reads the local GLB wrapper; `scene.js` owns lighting, scenery and cameras; `game.js` owns simulation, input, audio and HUD. `style.css` and `race.css` style the interface.
+
+## Rebuild the supplied car asset
+
+`node tools/convert-rpf.cjs /path/to/22m5/dlc.rpf`
+
+This produces `assets/bmw-m5-cs.glb`, a base64 JavaScript wrapper for opening the game directly from disk, and `assets/model-info.json`. The converter supports this unencrypted RPF7 / Gen9 RSC7 model and BC1, BC3 and BGRA8 textures; it is not a general GTA importer. The source archive is read-only and is not copied into the project.

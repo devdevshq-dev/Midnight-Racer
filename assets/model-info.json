@@ -1,0 +1,9 @@
+{
+  "source": "User-supplied 22m5/dlc.rpf",
+  "sha256": "0c89fb9533806dcc917d08030f315b314a1f9fae27d246879655b43268d9ec8e",
+  "bytes": 21467744,
+  "bodyTriangles": 256393,
+  "wheelTriangles": 56641,
+  "textures": 42,
+  "groundOffset": 0.4919920116662979
+}
