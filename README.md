@@ -6,6 +6,12 @@ The player car is converted from the user-supplied `22m5/dlc.rpf`, with its deta
 
 Alternatively, serve this folder with `python3 -m http.server 8080` and visit http://localhost:8080.
 
+## Driving and visual enhancements
+
+Steering uses lateral velocity and tire grip, with reduced steering angle at high speed and a little momentum when you release the controls. Braking gives the car more lateral grip; nitro makes direction changes more deliberate. Barrier contact pushes the car back toward the road. The simulation runs at 120 fixed steps per second, independently of display refresh rate.
+
+The M5 now responds with cornering roll, acceleration squat, brake dive, suspension vibration and speed-sensitive front wheels. The chase camera eases into turns, widens with speed and boost, and briefly shakes on impact. Warm atmospheric lighting, procedural clouds, working headlight beams, a contact shadow, scrolling asphalt, gravel shoulders, alternating curb strips, reflectors and braking/cornering tire marks add road detail. Traffic now includes distinct sedans, coupes and SUVs with contoured paintwork, windows, grilles, mirrors, detailed rotating wheels, LED lights and lane-change indicators. Fleet templates share geometry and batch static trim by material. Shared roadside meshes use instanced rendering to reduce draw calls. All effects remain local and require no new downloads.
+
 ## Controls
 
 - Left / Right or A / D: steer
@@ -20,13 +26,13 @@ Alternatively, serve this folder with `python3 -m http.server 8080` and visit ht
 
 There is no finish line, distance cap, checkpoint requirement or time limit. Distance and drive time keep increasing. Every 15 seconds of active driving, current speed and cruise/throttle/nitro targets increase by 10%, cumulatively: 1.10× after 15 seconds, 1.21× after 30, 1.331× after 45. Braking remains available. The starting countdown, pauses and background tabs do not advance this timer; restarting resets the progression.
 
-Traffic changes lanes; close passes add score, a temporary multiplier and nitro. Traffic collisions remove 40% condition, barriers remove 18%, and collisions briefly grant damage immunity. A run ends only when condition reaches zero. Best score is saved locally when storage is available. Leaving the window automatically pauses the game.
+Traffic changes lanes; close passes add score, a temporary multiplier and nitro. Traffic collisions use swept contact detection and transfer momentum according to contact direction and relative speed. Gentle bumps do less damage than fast impacts (3–65% condition); sideswipes preserve forward speed while pushing both cars apart. Contact produces a brief yaw reaction and throttle/boost recovery period. Each traffic car has a 1.2-second damage cooldown, while physical separation remains active. Barriers remove 18% condition and have a brief damage cooldown. A run ends only when condition reaches zero. Best score is saved locally when storage is available. Leaving the window automatically pauses the game.
 
 ## Verification
 
-Run `node tests/race.test.cjs` for driving, endless distance/time, damage/immunity, score persistence, cumulative speed increases, pause and restart checks. Run `node tests/model.test.cjs` to validate the GLB and wheel geometry. Actual Chrome testing also covers WebGL startup, keyboard steering, boost, pause/resume, both cameras, restart and mobile rendering.
+Run `node tests/race.test.cjs` for driving, endless distance/time, damage/immunity, score persistence, cumulative speed increases, pause and restart checks, plus momentum, grip recovery, barrier deflection, 30/120 Hz consistency, directional collision impulses, damage scaling, per-car cooldowns and swept contact detection. Run `node tests/traffic.test.cjs` for fleet geometry, dimensions, wheel animation isolation and mesh-budget checks. Run `node tests/model.test.cjs` to validate the GLB and wheel geometry. Actual Chrome testing also covers WebGL startup, keyboard steering, boost, pause/resume, both cameras, restart and mobile rendering.
 
-`car-loader.js` reads the local GLB wrapper; `scene.js` owns lighting, scenery and cameras; `game.js` owns simulation, input, audio and HUD. `style.css` and `race.css` style the interface.
+`car-loader.js` reads the local GLB wrapper; `collisions.js` detects swept traffic contacts; `traffic-cars.js` builds the shared procedural traffic fleet; `scene.js` owns lighting, scenery and cameras; `game.js` owns simulation, input, audio and HUD. `style.css` and `race.css` style the interface.
 
 ## Rebuild the supplied car asset
 
