@@ -22,12 +22,25 @@
       const white=new T.MeshBasicMaterial({color:0xffffff});for(const [x,y,z,w,h,d]of [[-8,7,0,2,4,20],[8,6,0,2,3,20],[0,10,0,8,.1,20],[0,3,-12,9,4,.1]])box(env,white,x,y,z,w,h,d);
       const pmrem=new T.PMREMGenerator(this.renderer);this.environment=pmrem.fromScene(env,.07);this.scene.environment=this.environment.texture;pmrem.dispose();
       this.player=buildM5Car();this.scene.add(this.player);this.rivals=[];this.props=[];
+      this.suspension=new RaceSuspension();
+      this.cockpit=installM5Cockpit(this.player);
       this.exhaust=buildNitroExhaust(this.player.userData.body);
-      this.makeWorld();this.makeDrivingEffects();this.cameraTarget=new T.Vector3();this.visualTime=0;
+      this.makeWorld();this.makeDrivingEffects();this.cameraTarget=new T.Vector3();this.cameraSteering=0;this.visualTime=0;
       this.needsRender=true;this.lastRenderMode=null;this.lastCamera=null;
       this.player.userData.ready.then(()=>{this.needsRender=true;}).catch(()=>{});
       this.sparkGeometry=new T.BufferGeometry();this.sparkPositions=new Float32Array(90*3);this.sparkGeometry.setAttribute('position',new T.BufferAttribute(this.sparkPositions,3));this.sparks=new T.Points(this.sparkGeometry,new T.PointsMaterial({color:0xffbe61,size:.075,transparent:true}));this.scene.add(this.sparks);this.sparkAge=10;
       addEventListener('resize',()=>{this.needsRender=true;this.camera.aspect=innerWidth/innerHeight;this.camera.updateProjectionMatrix();this.renderer.setSize(innerWidth,innerHeight);});
+    }
+    steeringAngle(state){return T.MathUtils.clamp(state.steer||0,-1,1)*(.24/(1+Math.max(0,state.speed)/120));}
+    updateCameraSteering(state,dt){
+      if(['menu','countdown'].includes(state.mode)){this.cameraSteering=0;return 0;}
+      if(state.mode!=='playing')return this.cameraSteering||0;
+      // Use the same speed-sensitive angle as the front wheels, plus actual travel heading.
+      const moving=T.MathUtils.clamp(state.speed/45,0,1);
+      const desired=T.MathUtils.clamp((this.steeringAngle(state)*.85+(state.heading||0)*.4)*moving,-.16,.16);
+      const blend=1-Math.exp(-Math.max(0,dt)*5);
+      this.cameraSteering=T.MathUtils.lerp(this.cameraSteering||0,desired,blend);
+      return this.cameraSteering;
     }
     roadX(s){return Math.sin(s*.0028)*21+Math.sin(s*.006+.4)*6;}
     roadSlope(s){return Math.cos(s*.0028)*.0588+Math.cos(s*.006+.4)*.036;}
@@ -75,9 +88,12 @@
     impact(contact){this.sparkAge=0;this.impactContact=contact;}
     render(state,dt,time){
       if(this.contextLost)return;
+      this.suspension.update(state,dt);this.suspension.apply(this.player.userData.body,state);
+      this.cockpit.update(state,dt);
       this.exhaust.update(state,this.visualTime);
       const idle=['menu','paused','crashed'].includes(state.mode);
       if(idle&&!this.needsRender&&this.lastRenderMode===state.mode&&this.lastCamera===state.camera)return;
+      const cameraChanged=this.lastCamera!==state.camera;
       this.needsRender=false;this.lastRenderMode=state.mode;this.lastCamera=state.camera;
       const menu=state.mode==='menu',d=menu?0:state.distance;this.visualTime+=dt;
       this.asphalt.offset.y=(d/5)%1;
@@ -91,11 +107,7 @@
       const travelled=d-this.previousDistance;if(travelled<0||state.mode==='countdown')this.skidHistory=[];
       if(dt>0&&!menu){for(const mark of this.skidHistory)mark.z+=Math.max(0,travelled);if(state.speed>65&&(state.braking||Math.abs(state.lateralAcceleration)>10)){for(const side of [-1,1])this.skidHistory.push({x:state.x+side*.8,z:1.5,length:Math.max(.12,travelled)});}}
       this.skidHistory=this.skidHistory.filter(m=>m.z<34).slice(-240);this.skidHistory.forEach((m,i)=>{this.skidPositions.set([m.x,.015,m.z,m.x,.015,m.z+m.length],i*6);});this.skidGeo.setDrawRange(0,this.skidHistory.length*2);this.skidGeo.attributes.position.needsUpdate=true;this.previousDistance=d;
-      const body=this.player.userData.body,settle=1-Math.exp(-dt*8);
-      body.rotation.z=T.MathUtils.lerp(body.rotation.z,menu?0:T.MathUtils.clamp(-(state.lateralAcceleration||0)*.004,-.045,.045),settle);
-      body.rotation.x=T.MathUtils.lerp(body.rotation.x,menu?0:T.MathUtils.clamp(-(state.acceleration||0)*.003,-.025,.035),settle);
-      body.position.y=menu?0:Math.sin(this.visualTime*19)*Math.min(state.speed/240,1)*.004;
-      for(const w of this.player.userData.wheels){w.spin.rotation.x-=menu?0:state.speed/3.6*dt/(w.radius||.39);w.wheel.rotation.y=w.front&&!menu?-state.steer*(.24/(1+state.speed/120)):0;}
+      for(const w of this.player.userData.wheels){w.spin.rotation.x-=menu?0:state.speed/3.6*dt/(w.radius||.39);w.wheel.rotation.y=w.front&&!menu?-this.steeringAngle(state):0;}
       for(const m of this.player.userData.brakeMaterials)m.emissiveIntensity=state.braking?3:1;
       for(let i=0;i<state.traffic.length;i++){const car=state.traffic[i];if(!this.rivals[i])this.makeTraffic([0x657d9b,0xbfc3bf,0x783b34,0x373b44,0xa59778][i%5]);const o=this.rivals[i];o.visible=true;o.position.set(car.x+this.relativeX(car.s,d),0,d-car.s);const laneVelocity=(car.target-car.x)*.65;
         o.rotation.y=-(this.roadSlope(car.s)-this.roadSlope(d))-Math.atan2(laneVelocity+(car.lateralImpact||0),Math.max(1,car.speed/3.6))+(car.impactYaw||0);
@@ -103,12 +115,14 @@
         o.userData.indicators.forEach((light,side)=>{light.visible=Math.abs(car.target-car.x)>.2&&(side===0?laneVelocity<0:laneVelocity>0)&&Math.floor(this.visualTime*3)%2===0;});}
       for(let i=state.traffic.length;i<this.rivals.length;i++)this.rivals[i].visible=false;
       this.sparkAge+=dt;this.sparks.visible=this.sparkAge<.8;if(this.sparks.visible){for(let i=0;i<90;i++){const a=i*2.4,t=this.sparkAge;this.sparkPositions[i*3]=(this.impactContact?.x??state.x)+Math.sin(a)*t*5;this.sparkPositions[i*3+1]=.5+Math.abs(Math.cos(a))*t*4-t*t*5;this.sparkPositions[i*3+2]=(this.impactContact?.z||0)+Math.cos(a)*t*5;}this.sparkGeometry.attributes.position.needsUpdate=true;}
+      const turn=this.updateCameraSteering(state,dt);
       let eye,target;
       if(menu){const mobile=innerWidth<650;eye=mobile?new T.Vector3(9,3.0,10.5):new T.Vector3(8.0,2.65,8.4);target=mobile?new T.Vector3(2.0,3.3,0):new T.Vector3(-.4,.82,0);this.camera.fov=mobile?50:43;}
-      else if(state.camera===1){eye=new T.Vector3(state.x,1.23,-1.2);target=new T.Vector3(state.x*.8+this.relativeX(d+65,d),1,-65);this.camera.fov=72;}
-      else {eye=new T.Vector3(state.x*.68,3.15,state.boosting?8.5:7.5);target=new T.Vector3(state.x*.65+this.relativeX(d+28,d)*.45,.72,-12);this.camera.fov=T.MathUtils.lerp(this.camera.fov,55+Math.min(state.speed/300,1)*6+(state.boosting?5:0),1-Math.exp(-dt*4));}
+      else if(state.camera===2){eye=new T.Vector3(-.38,1.18,.3).applyQuaternion(this.player.quaternion).add(this.player.position);target=new T.Vector3(state.x-.38+this.relativeX(d+40,d)+Math.tan(turn)*25,-2,-40);this.camera.fov=76;}
+      else if(state.camera===1){eye=new T.Vector3(state.x-Math.sin(this.player.rotation.y)*1.2,1.23,-1.2);target=new T.Vector3(state.x+this.relativeX(d+65,d)+Math.tan(turn)*65,1,-65);this.camera.fov=72;}
+      else {const followDistance=state.boosting?8.5:7.5;eye=new T.Vector3(state.x*.68-Math.sin(turn)*followDistance,3.15,Math.cos(turn)*followDistance);target=new T.Vector3(state.x*.65+this.relativeX(d+28,d)*.45+Math.tan(turn)*18,.72,-12);this.camera.fov=T.MathUtils.lerp(this.camera.fov,55+Math.min(state.speed/300,1)*6+(state.boosting?5:0),1-Math.exp(-dt*4));}
       if(!menu&&this.sparkAge<.45){const strength=(1-this.sparkAge/.45)*.085*(this.impactContact?.strength??1);eye.x+=Math.sin(this.sparkAge*90)*strength;eye.y+=Math.cos(this.sparkAge*73)*strength;}
-      this.camera.position.lerp(eye,menu?1:1-Math.exp(-dt*(state.camera?14:6)));this.cameraTarget.lerp(target,menu?1:1-Math.exp(-dt*9));this.camera.lookAt(this.cameraTarget);this.camera.updateProjectionMatrix();
+      this.camera.position.lerp(eye,menu||cameraChanged?1:1-Math.exp(-dt*(state.camera?14:6)));this.cameraTarget.lerp(target,menu||cameraChanged?1:1-Math.exp(-dt*9));this.camera.lookAt(this.cameraTarget);this.camera.updateProjectionMatrix();
       this.renderer.render(this.scene,this.camera);
     }
   }

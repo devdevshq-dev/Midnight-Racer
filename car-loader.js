@@ -39,6 +39,9 @@
         const mesh=new T.Mesh(geometry,materials[p.material]);mesh.name=materials[p.material].name;mesh.castShadow=!mesh.material.transparent;mesh.receiveShadow=true;content.add(mesh);
       }
     }
+    // The wheel assemblies are unsprung: keep their contact patches on the road
+    // while the body, cabin and exhaust move on the suspension.
+    for(const {wheel} of wheels)car.add(wheel);
     const brakeMaterials=materials.filter(m=>m.userData.sourceShader===18);
     car.userData={body,wheels,brakeMaterials,ready:Promise.all(pending),source:'22m5/dlc.rpf',geometryCount:geometryCache.size};
     return car;

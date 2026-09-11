@@ -11,9 +11,10 @@ assert.deepEqual(Buffer.from(context.window.NIGHTSHIFT_ENGINE_MP3,'base64'),fs.r
 const drive=new context.window.RaceDrivetrain(),s={mode:'playing',speed:0,acceleration:3,braking:false,boosting:false};drive.reset(s);
 let shifts=0,last=1;for(let i=0;i<2400;i++){s.speed=i/8;drive.update(s,1/120);assert(s.rpm>=850&&s.rpm<=7200);assert(s.gear>=1&&s.gear<=8);if(s.gear!==last){shifts++;last=s.gear;}}
 assert(shifts>=4,'Acceleration produces distinct gear shifts');const before=s.rpm;s.mode='paused';drive.update(s,1);assert.equal(s.rpm,before,'Pause freezes drivetrain');drive.reset(s);assert.equal(s.gear,1);
-const audio=new context.window.RaceEngineAudio();await audio.start();await Promise.resolve();assert(audio.recording?.started,'Supplied recording is decoded and looped');assert(audio.recording.loop);assert.equal(audio.recording.buffer.numberOfChannels,2);
+const audio=new context.window.RaceEngineAudio({useRecording:true});await audio.start();await Promise.resolve();assert(audio.recording?.started,'Supplied recording is decoded and looped');assert(audio.recording.loop);assert.equal(audio.recording.buffer.numberOfChannels,2);
 s.mode='playing';s.rpm=5000;s.engineLoad=.8;audio.update(s);assert(audio.master.gain.value>0);assert.equal(audio.engine.gain.value,0,'Synthetic engine is silenced when recording is available');assert(audio.recordedGain.gain.value>0);assert(audio.recording.playbackRate.value>1);
 const loadedGain=audio.recordedGain.gain.value;s.shiftTime=.15;audio.update(s);assert(audio.recordedGain.gain.value<loadedGain,'Shifts briefly reduce load volume');
 audio.muted=true;audio.update(s);assert.equal(audio.master.gain.value,0);audio.muted=false;s.mode='paused';audio.update(s);assert.equal(audio.master.gain.value,0);s.mode='playing';audio.update(s);assert(audio.master.gain.value>0);
+const synthesized=new context.window.RaceEngineAudio();await synthesized.start();s.mode='playing';s.shiftTime=0;synthesized.update(s);assert(!synthesized.recording);assert(synthesized.engine.gain.value>0,'Synthesis is the default');
 console.log('PASS: recording wrapper parity, loop setup, RPM bounds, gear shifts, sample priority, shift volume, mute and pause.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

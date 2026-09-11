@@ -1,4 +1,4 @@
-/* User-supplied M5 recording, with a synthesized fallback if audio decoding fails. */
+/* Synthesized V8 engine with an optional user-supplied recording mode. */
 (() => {
   'use strict';
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -23,10 +23,10 @@
     }
   }
   class EngineAudio {
-    constructor(){this.muted=false;this.ctx=null;this.lastLoad=0;this.lastEffect=-1;}
+    constructor({useRecording=false}={}){this.useRecording=useRecording;this.muted=false;this.ctx=null;this.lastLoad=0;this.lastEffect=-1;}
     async start(){
       try{
-        if(!this.ctx){const A=window.AudioContext||window.webkitAudioContext;if(!A)return;this.ctx=new A();this.build();this.loadRecording();}
+        if(!this.ctx){const A=window.AudioContext||window.webkitAudioContext;if(!A)return;this.ctx=new A();this.build();if(this.useRecording)this.loadRecording();}
         await this.ctx.resume();
       }catch(error){console.warn('Engine audio unavailable:',error);}
     }
