@@ -4,7 +4,8 @@
   const T=THREE;
   window.buildM5Car=function(){
     if(!window.NIGHTSHIFT_M5_GLB)throw Error('The supplied M5 asset is missing.');
-    const bytes=Uint8Array.from(atob(window.NIGHTSHIFT_M5_GLB),c=>c.charCodeAt(0));
+    const decoded=atob(window.NIGHTSHIFT_M5_GLB),bytes=new Uint8Array(decoded.length);
+    for(let i=0;i<decoded.length;i++)bytes[i]=decoded.charCodeAt(i);
     const view=new DataView(bytes.buffer);
     if(view.getUint32(0,true)!==0x46546c67||view.getUint32(4,true)!==2)throw Error('Invalid M5 GLB asset');
     const jsonLength=view.getUint32(12,true),data=JSON.parse(new TextDecoder().decode(bytes.subarray(20,20+jsonLength))),binStart=28+jsonLength;

@@ -12,6 +12,18 @@ Steering uses lateral velocity and tire grip, with reduced steering angle at hig
 
 The M5 now responds with cornering roll, acceleration squat, brake dive, suspension vibration and speed-sensitive front wheels. The chase camera eases into turns, widens with speed and boost, and briefly shakes on impact. Warm atmospheric lighting, procedural clouds, working headlight beams, a contact shadow, scrolling asphalt, gravel shoulders, alternating curb strips, reflectors and braking/cornering tire marks add road detail. Traffic now includes distinct sedans, coupes and SUVs with contoured paintwork, windows, grilles, mirrors, detailed rotating wheels, LED lights and lane-change indicators. Fleet templates share geometry and batch static trim by material. Shared roadside meshes use instanced rendering to reduce draw calls. All effects remain local and require no new downloads.
 
+## Engine sound and nitro exhaust
+
+The engine uses the user-supplied `bmw_m5.mp3`, copied unchanged to `assets/m5-engine.mp3`. Its local JavaScript wrapper supports opening the game directly from disk. Playback crossfades the loop boundary and adjusts pitch and volume with RPM, throttle load and shifts. An eight-speed drivetrain model keeps the HUD gear and audio aligned, with bounded RPM and shift hysteresis. The source recording has its own rev changes; playback-rate adjustment is an approximation, not a bank of separately recorded steady-RPM engine samples. A layered synthesized V8 remains a fallback only if the recording cannot decode. The reference configuration is BMW's [M5 CS V8 and eight-speed transmission](https://www.press.bmwgroup.com/global/article/detail/T0324217EN/the-new-bmw-m5-cs?language=en).
+
+Four animated exhaust jets show blue-white cores and orange trails while nitro is actively boosting, with a warm local light. Flames follow the body's movement and shut off on braking, boost release, empty nitro, pause or crash. These are gameplay effects.
+
+## Phone support
+
+Touch controls suppress text selection and long-press copy menus, accept simultaneous steering and nitro/brake presses, and release safely on pointer cancellation or pause. Portrait and landscape layouts keep buttons above the home indicator and clear of display cutouts. Short menus can scroll. A graphics-context interruption pauses the run until the browser restores graphics.
+
+Mobile optimization preserves the full M5 mesh, texture resolution, lighting, shadows and rendering resolution. Roadside materials are shared across 18 instanced batches, with all 166,724 scenery triangles retained. Stationary menus and paused scenes redraw only when needed; HUD updates run at 15 Hz while driving physics and rendering remain independent. Base64 model decoding avoids a per-byte callback and intermediate array. These changes reduce work without introducing a reduced-quality mode. Performance still depends on the phone GPU and browser; real-device frame rates have not been measured.
+
 ## Controls
 
 - Left / Right or A / D: steer
@@ -20,7 +32,7 @@ The M5 now responds with cornering roll, acceleration squat, brake dive, suspens
 - Down or S: brake
 - P or Escape: pause / resume
 - C: switch chase / hood camera
-- M: mute / unmute synthesized engine audio
+- M: mute / unmute engine audio
 - Enter: start or retry
 - Touchscreen: on-screen steering, brake and nitro buttons
 
@@ -29,6 +41,10 @@ There is no finish line, distance cap, checkpoint requirement or time limit. Dis
 Traffic changes lanes; close passes add score, a temporary multiplier and nitro. Traffic collisions use swept contact detection and transfer momentum according to contact direction and relative speed. Gentle bumps do less damage than fast impacts (3–65% condition); sideswipes preserve forward speed while pushing both cars apart. Contact produces a brief yaw reaction and throttle/boost recovery period. Each traffic car has a 1.2-second damage cooldown, while physical separation remains active. Barriers remove 18% condition and have a brief damage cooldown. A run ends only when condition reaches zero. Best score is saved locally when storage is available. Leaving the window automatically pauses the game.
 
 ## Verification
+
+Run `node tests/audio.test.cjs` for recording integrity, drivetrain, audio routing and mute/pause checks; `node tests/effects.test.cjs` checks flame activation and shutoff. Audio routing uses a mocked Web Audio graph, so these checks do not establish subjective sound quality or browser MP3 decoding.
+
+Run `node tests/mobile.test.cjs` for multi-touch, cancellation/reset, selection suppression and scenery batching without geometry/material loss.
 
 Run `node tests/race.test.cjs` for driving, endless distance/time, damage/immunity, score persistence, cumulative speed increases, pause and restart checks, plus momentum, grip recovery, barrier deflection, 30/120 Hz consistency, directional collision impulses, damage scaling, per-car cooldowns and swept contact detection. Run `node tests/traffic.test.cjs` for fleet geometry, dimensions, wheel animation isolation and mesh-budget checks. Run `node tests/model.test.cjs` to validate the GLB and wheel geometry. Actual Chrome testing also covers WebGL startup, keyboard steering, boost, pause/resume, both cameras, restart and mobile rendering.
 

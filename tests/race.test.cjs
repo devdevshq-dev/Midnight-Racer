@@ -7,6 +7,8 @@ const element=id=>{if(!elements.has(id))elements.set(id,{style:{},classList:{add
 class MockScene{constructor(){this.renderer={info:{render:{}}};}roadSlope(s){return Math.cos(s*.0028)*.0588+Math.cos(s*.006+.4)*.036;}impact(){}render(){}}
 const context={console,RaceScene:MockScene,document:{getElementById:element,body:{classList:{add(){}}},addEventListener(){}},window:{},localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},addEventListener(){},requestAnimationFrame(){},setTimeout(){}};
 const source=readFileSync(join(__dirname,'../game.js'),'utf8').replace('function frame(t){','globalThis.test={state,start,update,pause,hit,finish,keys,frame,collide};function frame(t){');
+vm.runInNewContext(readFileSync(join(__dirname,'../engine-audio.js'),'utf8'),context);
+vm.runInNewContext(readFileSync(join(__dirname,'../mobile.js'),'utf8'),context);
 vm.runInNewContext(readFileSync(join(__dirname,'../collisions.js'),'utf8'),context);
 vm.runInNewContext(source,context);const t=context.test;
 const step=seconds=>{for(let i=0;i<Math.ceil(seconds*60);i++)t.update(1/60);};
