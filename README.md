@@ -16,7 +16,7 @@ The M5 now responds with spring-damped weight transfer: acceleration raises the 
 
 Cycle the camera button (or press C twice from chase view) to enter **Cockpit Cam**. It uses the supplied M5 cabin, including its original textured steering wheel, buttons, badge, dashboard and console, with the interior photo as the visual reference. The wheel’s 6,432 triangles are separated from the combined body mesh without removing any original model geometry. A steering-column pivot animates the wheel with speed-sensitive control input; pause freezes it and a restart centers it.
 
-An in-world instrument display shows live km/h, a moving speed needle, RPM, gear and boost status. The driver camera follows steering anticipation and snaps between camera modes to avoid travelling through body panels. This retains the existing model’s interior rather than recreating every detail of the photograph.
+An in-world instrument display shows live km/h, a moving speed needle, RPM, gear and boost status. The driver camera is fixed to the cabin transform, with gentle steering anticipation and no world-space follow lag. Cockpit mode uses gentle 1.7–3.1 Hz road motion capped at 0.6 mm, moving the camera and cabin together. It fades with speed, freezes on pause, and stays bounded at extreme pace. Impact camera shake remains disabled while suspension weight transfer is retained. Camera changes snap between modes to avoid travelling through body panels. This retains the existing model’s interior rather than recreating every detail of the photograph.
 
 ## Engine sound and nitro exhaust
 
