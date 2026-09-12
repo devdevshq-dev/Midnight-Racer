@@ -42,15 +42,25 @@
       this.cameraSteering=T.MathUtils.lerp(this.cameraSteering||0,desired,blend);
       return this.cameraSteering;
     }
-    cockpitCameraPose(state,turn){
+    cockpitCameraPose(state,turn,dt=0,reset=false){
       const body=this.player.userData.body;
       body.updateWorldMatrix(true,false);
-      // Driver and dashboard share one transform. World-space chase-camera lag
-      // would otherwise make the nearby cabin slide and shake around the driver.
+      // Blend the stable cabin pose with the original world-space camera.
+      // Keeping 40% of their difference restores visible dashboard movement.
       const eye=body.localToWorld(new T.Vector3(-.38,1.18,.3));
       const preview=this.relativeX(state.distance+40,state.distance)*.35;
       const target=body.localToWorld(new T.Vector3(-.38+Math.tan(turn*.55)*40+preview,-2,-40));
       const up=new T.Vector3(0,1,0).transformDirection(body.matrixWorld);
+      const originalEye=new T.Vector3(-.38,1.18,.3).applyQuaternion(this.player.quaternion).add(this.player.position);
+      const originalTarget=new T.Vector3(state.x-.38+this.relativeX(state.distance+40,state.distance)+Math.tan(turn)*25,-2,-40);
+      if(reset||state.mode==='countdown'||!this.cockpitFollowEye){
+        this.cockpitFollowEye=originalEye.clone();this.cockpitFollowTarget=originalTarget.clone();
+      }else if(state.mode==='playing'){
+        this.cockpitFollowEye.lerp(originalEye,1-Math.exp(-Math.max(0,dt)*14));
+        this.cockpitFollowTarget.lerp(originalTarget,1-Math.exp(-Math.max(0,dt)*9));
+      }
+      eye.lerp(this.cockpitFollowEye,.4);target.lerp(this.cockpitFollowTarget,.4);
+      up.lerp(new T.Vector3(0,1,0),.4).normalize();
       return {eye,target,up};
     }
     roadX(s){return Math.sin(s*.0028)*21+Math.sin(s*.006+.4)*6;}
@@ -129,10 +139,10 @@
       const turn=this.updateCameraSteering(state,dt);
       let eye,target;this.camera.up.set(0,1,0);
       if(menu){const mobile=innerWidth<650;eye=mobile?new T.Vector3(9,3.0,10.5):new T.Vector3(8.0,2.65,8.4);target=mobile?new T.Vector3(2.0,3.3,0):new T.Vector3(-.4,.82,0);this.camera.fov=mobile?50:43;}
-      else if(state.camera===2){const pose=this.cockpitCameraPose(state,turn);eye=pose.eye;target=pose.target;this.camera.up.copy(pose.up);this.camera.fov=76;}
+      else if(state.camera===2){const pose=this.cockpitCameraPose(state,turn,dt,cameraChanged);eye=pose.eye;target=pose.target;this.camera.up.copy(pose.up);this.camera.fov=76;}
       else if(state.camera===1){eye=new T.Vector3(state.x-Math.sin(this.player.rotation.y)*1.2,1.23,-1.2);target=new T.Vector3(state.x+this.relativeX(d+65,d)+Math.tan(turn)*65,1,-65);this.camera.fov=72;}
       else {const followDistance=state.boosting?8.5:7.5;eye=new T.Vector3(state.x*.68-Math.sin(turn)*followDistance,3.15,Math.cos(turn)*followDistance);target=new T.Vector3(state.x*.65+this.relativeX(d+28,d)*.45+Math.tan(turn)*18,.72,-12);this.camera.fov=T.MathUtils.lerp(this.camera.fov,55+Math.min(state.speed/300,1)*6+(state.boosting?5:0),1-Math.exp(-dt*4));}
-      if(!menu&&state.camera!==2&&this.sparkAge<.45){const strength=(1-this.sparkAge/.45)*.085*(this.impactContact?.strength??1);eye.x+=Math.sin(this.sparkAge*90)*strength;eye.y+=Math.cos(this.sparkAge*73)*strength;}
+      if(!menu&&this.sparkAge<.45){const strength=(1-this.sparkAge/.45)*.085*(this.impactContact?.strength??1)*(state.camera===2?.4:1);eye.x+=Math.sin(this.sparkAge*90)*strength;eye.y+=Math.cos(this.sparkAge*73)*strength;}
       this.camera.position.lerp(eye,menu||cameraChanged||state.camera===2?1:1-Math.exp(-dt*(state.camera?14:6)));this.cameraTarget.lerp(target,menu||cameraChanged||state.camera===2?1:1-Math.exp(-dt*9));this.camera.lookAt(this.cameraTarget);this.camera.updateProjectionMatrix();
       this.renderer.render(this.scene,this.camera);
     }

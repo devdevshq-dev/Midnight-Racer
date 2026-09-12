@@ -14,9 +14,9 @@ result.suspension.update({...state,mode:'countdown'},0);assert.equal(result.susp
 console.log('PASS: acceleration nose lift, braking rear lift, correct outside-wheel loading, smooth settling, pause/reset and frame-rate independence.');
 
 const cockpitRide=new context.window.RaceSuspension(),cockpitBody=new THREE.Group();
-for(let i=0;i<120;i++){cockpitRide.update({...state,camera:2,acceleration:5},1/120);cockpitRide.apply(cockpitBody,{...state,camera:2});assert(Math.abs(cockpitBody.position.y)<=.0006,'Cockpit vibration stays below 0.6 mm');}
+for(let i=0;i<120;i++){cockpitRide.update({...state,camera:2,acceleration:5},1/120);cockpitRide.apply(cockpitBody,{...state,camera:2});assert(Math.abs(cockpitBody.position.y)<=.003,'Cockpit vibration stays below 3 mm');const originalBody=new THREE.Group();cockpitRide.apply(originalBody,{...state,camera:0});assert(Math.abs(cockpitBody.position.y-originalBody.position.y)<1e-12,'Body retains original road motion for the camera to blend');}
 assert(cockpitBody.rotation.x>0,'Cockpit keeps the real suspension weight-transfer response');
-assert(Math.abs(cockpitBody.position.y)>0,'Gentle road motion remains present');
-const pausedHeight=cockpitBody.position.y;cockpitRide.update({...state,camera:2,mode:'paused'},1);cockpitRide.apply(cockpitBody,{...state,camera:2,mode:'paused'});assert.equal(cockpitBody.position.y,pausedHeight,'Pause freezes the subtle vibration');
-for(let i=0;i<600;i++){cockpitRide.update({...state,camera:2,speed:1800},1/120);cockpitRide.apply(cockpitBody,{...state,camera:2,speed:1800});assert(Math.abs(cockpitBody.position.y)<=.0006,'Extreme pace cannot amplify cockpit vibration');}
-console.log('PASS: minimal cockpit vibration, bounded amplitude at extreme speed, pause freeze and suspension pitch preserved.');
+assert(Math.abs(cockpitBody.position.y)>0,'Original road motion remains present');
+const pausedHeight=cockpitBody.position.y;cockpitRide.update({...state,camera:2,mode:'paused'},1);cockpitRide.apply(cockpitBody,{...state,camera:2,mode:'paused'});assert.equal(cockpitBody.position.y,pausedHeight,'Pause freezes the vibration');
+for(let i=0;i<600;i++){cockpitRide.update({...state,camera:2,speed:1800},1/120);cockpitRide.apply(cockpitBody,{...state,camera:2,speed:1800});assert(Math.abs(cockpitBody.position.y)<=.003,'Extreme pace cannot amplify cockpit vibration');}
+console.log('PASS: original body vibration, bounded amplitude at extreme speed, pause freeze and suspension pitch preserved.');

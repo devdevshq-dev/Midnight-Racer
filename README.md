@@ -16,7 +16,7 @@ The M5 now responds with spring-damped weight transfer: acceleration raises the 
 
 Cycle the camera button (or press C twice from chase view) to enter **Cockpit Cam**. It uses the supplied M5 cabin, including its original textured steering wheel, buttons, badge, dashboard and console, with the interior photo as the visual reference. The wheel’s 6,432 triangles are separated from the combined body mesh without removing any original model geometry. A steering-column pivot animates the wheel with speed-sensitive control input; pause freezes it and a restart centers it.
 
-An in-world instrument display shows live km/h, a moving speed needle, RPM, gear and boost status. The driver camera is fixed to the cabin transform, with gentle steering anticipation and no world-space follow lag. Cockpit mode uses gentle 1.7–3.1 Hz road motion capped at 0.6 mm, moving the camera and cabin together. It fades with speed, freezes on pause, and stays bounded at extreme pace. Impact camera shake remains disabled while suspension weight transfer is retained. Camera changes snap between modes to avoid travelling through body panels. This retains the existing model’s interior rather than recreating every detail of the photograph.
+An in-world instrument display shows live km/h, a moving speed needle, RPM, gear and boost status. The driver camera blends 60% cabin tracking with 40% of the original camera motion, including steering anticipation, suspension movement and world-space follow lag. Cockpit mode retains 40% of the original road vibration relative to the dashboard (capped at 1.2 mm). It scales with speed, freezes on pause, and stays bounded at extreme pace. Impact camera shake also runs at 40% strength while suspension weight transfer is retained. Camera changes snap between modes to avoid travelling through body panels. This retains the existing model’s interior rather than recreating every detail of the photograph.
 
 ## Engine sound and nitro exhaust
 
@@ -36,7 +36,7 @@ Mobile optimization preserves the full M5 mesh, texture resolution, lighting, sh
 
 - Left / Right or A / D: steer
 - W or Up: full throttle (the car automatically accelerates to cruising speed)
-- Space: nitro (recharges when released; close passes give a bonus)
+- Space: nitro (requires more than 25% to engage, then runs until released or depleted; recharges when released; close passes give a bonus)
 - Down or S: brake
 - P or Escape: pause / resume
 - C: cycle chase / hood / cockpit camera

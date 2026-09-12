@@ -52,7 +52,7 @@
     state.elapsed+=dt;immunity=Math.max(0,immunity-dt);
     const speedLevel=Math.floor((state.elapsed+1e-8)/15);
     if(speedLevel>state.speedLevel){const increase=Math.pow(1.1,speedLevel-state.speedLevel);state.speed*=increase;state.speedLevel=speedLevel;state.speedMultiplier=Math.pow(1.1,speedLevel);notice(`PACE INCREASED / +10% / ${Math.round(state.speedMultiplier*100)}% PACE`,2.5);}
-    state.braking=keys.has('KeyS')||keys.has('ArrowDown')||touch.brake;state.boosting=(keys.has('Space')||touch.boost)&&state.nitro>1&&!state.braking&&state.impactRecovery===0;
+    state.braking=keys.has('KeyS')||keys.has('ArrowDown')||touch.brake;state.boosting=(keys.has('Space')||touch.boost)&&(state.boosting?state.nitro>0:state.nitro>25)&&!state.braking&&state.impactRecovery===0;
     const gas=keys.has('KeyW')||keys.has('ArrowUp'),target=state.braking?40:(state.boosting?300:gas?240:215)*state.speedMultiplier,rate=state.braking?2.3:state.boosting?1.1:.38;const previousSpeed=state.speed;state.speed+=(target-state.speed)*(1-Math.exp(-dt*rate*(state.impactRecovery>0&&!state.braking?.25:1)));state.acceleration=(state.speed-previousSpeed)/3.6/dt;state.nitro=clamp(state.nitro+(state.boosting?-24:9)*dt,0,100);
     const input=(keys.has('KeyD')||keys.has('ArrowRight')||touch.right?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')||touch.left?1:0);// Speed-sensitive steering builds lateral momentum; grip progressively arrests a slide.
     const velocity=state.speed/3.6;

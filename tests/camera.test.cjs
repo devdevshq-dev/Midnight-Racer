@@ -16,13 +16,29 @@ fast.updateCameraSteering({...state,mode:'countdown'},0);assert.equal(fast.camer
 const stationary=camera();stationary.updateCameraSteering({...state,speed:0},1);assert.equal(stationary.cameraSteering,0,'Stationary steering does not swing the camera');
 console.log('PASS: directional camera steering, speed sensitivity, centering, pause/reset, bounded angles and frame-rate consistency.');
 
-// Relative eye position and orientation stay fixed in the cabin through motion.
+// The cockpit retains 40% of the old camera motion relative to the cabin.
 const rig=camera();rig.player=new THREE.Group();const cabin=new THREE.Group();rig.player.add(cabin);rig.player.userData.body=cabin;
-const driving={...state,camera:2,distance:120};
+const driving={...state,x:0,camera:2,distance:120};
+const localEye=new THREE.Vector3(-.38,1.18,.3);
 for(let i=0;i<40;i++){
-  rig.player.position.set(i*.1,0,0);rig.player.rotation.y=Math.sin(i)*.1;cabin.rotation.set(Math.sin(i)*.04,0,Math.cos(i)*.05);
-  const pose=rig.cockpitCameraPose(driving,.05);
-  assert(cabin.worldToLocal(pose.eye.clone()).distanceTo(new THREE.Vector3(-.38,1.18,.3))<1e-9,'Eye cannot lag or slide relative to the dashboard');
-  const expectedUp=new THREE.Vector3(0,1,0).transformDirection(cabin.matrixWorld);assert(pose.up.distanceTo(expectedUp)<1e-9,'Camera follows cabin roll');
+  rig.player.position.set(0,0,0);rig.player.rotation.y=0;
+  cabin.position.y=Math.sin(i)*.003;cabin.rotation.set(Math.sin(i)*.04,0,Math.cos(i)*.05);
+  const pose=rig.cockpitCameraPose(driving,.05,1/120,true);
+  const stableEye=cabin.localToWorld(localEye.clone());
+  const expectedEye=stableEye.clone().lerp(localEye,.4);
+  assert(pose.eye.distanceTo(expectedEye)<1e-9,'Camera preserves 40% of original cabin-relative movement');
 }
-console.log('PASS: cockpit eye and up-vector stay attached through steering, pitch and roll.');
+cabin.rotation.set(0,0,0);cabin.position.y=.003;
+let pose=rig.cockpitCameraPose(driving,0,1/120,true);
+assert(Math.abs(cabin.worldToLocal(pose.eye.clone()).y-localEye.y+.0012)<1e-9,'3 mm road vibration remains visible as 1.2 mm of dashboard movement');
+rig.player.position.x=1;
+pose=rig.cockpitCameraPose({...driving,x:1},0,1/120);
+const stableEye=cabin.localToWorld(localEye.clone());
+assert(Math.abs(stableEye.x-pose.eye.x-.4*Math.exp(-14/120))<1e-9,'Original follow lag returns at 40% strength');
+const heldEye=pose.eye.clone();pose=rig.cockpitCameraPose({...driving,x:1,mode:'paused'},0,1);
+assert(pose.eye.distanceTo(heldEye)<1e-9,'Pause freezes camera follow');
+pose=rig.cockpitCameraPose({...driving,x:1,mode:'countdown'},0,0);
+assert(Math.abs(pose.eye.x-stableEye.x)<1e-9,'Restart clears old follow lag');
+rig.player.position.x=5;pose=rig.cockpitCameraPose({...driving,x:5},0,1/120,true);
+assert(Math.abs(pose.eye.x-(5+localEye.x))<1e-9,'Camera switch clears old follow lag');
+console.log('PASS: 40% cabin-relative road vibration, suspension motion, follow lag, pause and reset.');

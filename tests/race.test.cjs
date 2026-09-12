@@ -78,3 +78,13 @@ assert(contact({x:3,s:0},{x:-3,s:0}).x===1,'Swept lateral impact');
 assert.equal(contact({x:3,s:12},{x:3,s:-12}),null,'Adjacent-lane pass is clear');
 assert.equal(contact({x:5,s:5},{x:0,s:20}),null,'Crossing separate axes at different times is not a collision');
 console.log('PASS: impact severity, momentum transfer, separation, per-car cooldowns, sideswipes, rear impacts and swept collision detection.');
+
+// Starting boost requires more than 25%; an active boost can drain the tank.
+t.start();t.state.mode='playing';t.keys.add('Space');
+for(const charge of [0,10,25]){t.state.nitro=charge;t.state.boosting=false;t.update(1/120);assert.equal(t.state.boosting,false,'Boost cannot start at or below 25%');}
+t.state.nitro=25.01;t.update(1/120);assert(t.state.boosting,'Boost starts above 25%');
+t.state.nitro=10;t.update(1/120);assert(t.state.boosting,'Active boost continues below 25%');
+t.keys.clear();t.update(1/120);assert.equal(t.state.boosting,false);t.keys.add('Space');t.update(1/120);assert.equal(t.state.boosting,false,'Released boost needs to recharge above 25%');
+t.state.nitro=30;t.update(1/120);assert(t.state.boosting);t.state.nitro=.1;t.update(1/120);assert.equal(t.state.nitro,0);t.update(1/120);assert.equal(t.state.boosting,false,'Empty tank stops boost');
+t.state.nitro=30;t.keys.add('KeyS');t.update(1/120);assert.equal(t.state.boosting,false,'Braking prevents boost');t.keys.clear();
+console.log('PASS: nitro activation threshold, continued drain, release, depletion and braking.');
